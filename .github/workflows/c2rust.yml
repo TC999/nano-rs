@@ -1,0 +1,65 @@
+name: C2Rust
+
+on:
+  #push:
+  #  branches: [ "main" ]
+  #pull_request:
+  #  branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  C2Rust:
+
+    runs-on: ubuntu-latest
+    env:
+      LANG: zh_CN.UTF-8
+      LLVM_CONFIG_PATH: /usr/lib/llvm-17/bin/llvm-config
+      LLVM_SYS_170_PREFIX: /usr/lib/llvm-17/
+      CARGO_TERM_COLOR: always
+
+    steps:
+      - name: 终端汉化
+        run: |
+            sudo apt-get update
+            sudo apt-get install language-pack-zh-hans
+
+      - name: 安装依赖
+        run: |
+            sudo apt-get install build-essential llvm-17 clang-17 libclang-17-dev cmake libssl-dev pkg-config bear
+
+      - name: 安装 Rust
+        uses: actions-rs/toolchain@v1
+        with:
+            toolchain: nightly
+            override: true
+            components: rustfmt, clippy
+
+      - name: 安装 C2Rust
+        run: |
+          cargo install c2rust
+
+      - uses: actions/checkout@v4
+      - name: 配置
+        run: ./configure
+      - name: 创建数据库
+        run: bear -- make -j8
+
+      - name: 转换
+        run: |
+          c2rust transpile compile_commands.json
+
+      - name: 清理编译结果
+        run: |
+          make clean
+
+      - name: 查看文件树
+        run: |
+          tree
+      - name: 上传
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "actions-bot"
+          git pull
+          git add .
+          git commit -m "C2Rust"
+          git push
