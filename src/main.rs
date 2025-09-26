@@ -241,6 +241,9 @@ fn main() {
     // 解析命令行参数
     let args: Vec<String> = env::args().collect();
     
+    println!("正在启动nano-rs编辑器...");
+    println!("参数: {:?}", args);
+    
     // 初始化屏幕
     let window = initscr();
     window.keypad(true);
@@ -249,6 +252,8 @@ fn main() {
     // 关闭回显，设置为raw模式
     pancurses::noecho();
     pancurses::cbreak();
+    
+    println!("屏幕已初始化");
     
     // 获取屏幕尺寸
     let mut rows = 0;
