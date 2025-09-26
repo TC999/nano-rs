@@ -1,20 +1,17 @@
-// 一个简化版的nano编辑器实现，使用Rust风格和pancurses库
-
-use pancurses::{initscr, endwin, Input, Window};
 use std::env;
 use std::fs::File;
-use std::io::{Read, Write};
+use std::io::{self, Read, Write, stdout, stdin};
 use std::path::Path;
 use std::vec::Vec;
+use termion::raw::{IntoRawMode, RawTerminal};
+use termion::{cursor, clear, event::Key, input::TermRead};
 
-// 编辑器配置
 struct EditorConfig {
     line_numbers: bool,
     autoindent: bool,
     tabsize: usize,
 }
 
-// 编辑器状态
 struct Editor {
     config: EditorConfig,
     buffer: Vec<String>,
@@ -23,11 +20,10 @@ struct Editor {
     cursor_y: usize,
     screen_start_y: usize,
     modified: bool,
-    screen_rows: usize,  // 屏幕行数
+    screen_rows: usize,
 }
 
 impl Editor {
-    // 创建新的编辑器实例
     fn new() -> Self {
         Editor {
             config: EditorConfig {
@@ -41,7 +37,7 @@ impl Editor {
             cursor_y: 0,
             screen_start_y: 0,
             modified: false,
-            screen_rows: 24,  // 默认值
+            screen_rows: 24,
         }
     }
 
@@ -180,174 +176,64 @@ impl Editor {
         }
     }
 
-    // 渲染编辑器
-    fn render(&mut self, window: &Window, rows: i32, cols: i32) {
-        window.clear();
-        
-        // 更新屏幕行数
-        self.screen_rows = rows as usize;
-        
-        let rows_usize = rows as usize;
-        let cols_usize = cols as usize;
-        
-        // 显示文件内容
-        for i in 0..rows_usize - 2 { // 留出2行用于状态栏
+    // 用 termion 渲染
+    fn render<W: Write>(&mut self, stdout: &mut W) {
+        write!(stdout, "{}", clear::All).unwrap();
+        for i in 0..self.screen_rows - 2 {
             let line_index = self.screen_start_y + i;
-            if line_index >= self.buffer.len() {
-                break;
-            }
-            
+            if line_index >= self.buffer.len() { break; }
             let line = &self.buffer[line_index];
-            let mut display_line = line.clone();
-            
-            // 如果启用了行号
             if self.config.line_numbers {
-                let line_num = format!("{:4} ", line_index + 1);
-                window.mvprintw(i as i32, 0, &line_num);
-                window.mvprintw(i as i32, 5, &display_line);
+                write!(stdout, "{}{:4} {}", cursor::Goto(1, (i+1) as u16), line_index+1, line).unwrap();
             } else {
-                window.mvprintw(i as i32, 0, &display_line);
+                write!(stdout, "{}{}", cursor::Goto(1, (i+1) as u16), line).unwrap();
             }
         }
-        
-        // 显示状态栏
-        let status_line = format!(
-            "{}{} 行: {}, 列: {} 按 Ctrl+Q 退出",
+        // 状态栏
+        let status = format!("{}{} 行:{}, 列:{} 按 Ctrl+Q 退出",
             self.filename.as_ref().map_or("未命名", |f| f),
             if self.modified { " *" } else { "" },
-            self.cursor_y + 1, 
-            self.cursor_x + 1
+            self.cursor_y + 1, self.cursor_x + 1
         );
-        window.mvprintw((rows - 2) as i32, 0, &status_line);
-        
-        // 显示命令提示
-        let help_line = "Ctrl+S 保存 | Ctrl+X 剪切 | Ctrl+V 粘贴 | Ctrl+F 查找";
-        window.mvprintw((rows - 1) as i32, 0, &help_line);
-        
-        // 移动光标到正确位置
-        let display_y = (self.cursor_y - self.screen_start_y) as i32;
-        let display_x = if self.config.line_numbers {
-            self.cursor_x as i32 + 5
-        } else {
-            self.cursor_x as i32
-        };
-        window.mv(display_y, display_x);
-        
-        window.refresh();
+        write!(stdout, "{}{}", cursor::Goto(1, (self.screen_rows - 1) as u16), status).unwrap();
+        // 光标位置
+        let display_y = (self.cursor_y - self.screen_start_y) as u16 + 1;
+        let display_x = if self.config.line_numbers { self.cursor_x as u16 + 6 } else { self.cursor_x as u16 + 1 };
+        write!(stdout, "{}", cursor::Goto(display_x, display_y)).unwrap();
+        stdout.flush().unwrap();
     }
 }
 
 fn main() {
-    // 解析命令行参数
     let args: Vec<String> = env::args().collect();
-    
-    println!("正在启动nano-rs编辑器...");
-    println!("参数: {:?}", args);
-    
-    // 初始化屏幕
-    let window = initscr();
-    window.keypad(true);
-    window.nodelay(false);
-    
-    // 关闭回显，设置为raw模式
-    pancurses::noecho();
-    pancurses::cbreak();
-    
-    println!("屏幕已初始化");
-    
-    // 获取屏幕尺寸
-    let mut rows = 0;
-    let mut cols = 0;
-    let (rows_new, cols_new) = window.get_max_yx();
-    rows = rows_new;
-    cols = cols_new;
-    
-    // 创建编辑器实例
+    let stdin = stdin();
+    let mut stdout = stdout().into_raw_mode().unwrap();
+
+    // 获取终端尺寸
+    let (cols, rows) = termion::terminal_size().unwrap();
     let mut editor = Editor::new();
-    
-    // 如果提供了文件名参数，尝试加载文件
+    editor.screen_rows = rows as usize;
+
     if args.len() > 1 {
         let path = Path::new(&args[1]);
-        if let Err(err) = editor.load_file(path) {
-            window.mvprintw(0, 0, &format!("无法打开文件: {}", err));
-            window.refresh();
-            window.getch();
-        }
+        let _ = editor.load_file(path);
     }
-    
-    // 主循环
-    loop {
-        // 渲染编辑器
-        editor.render(&window, rows, cols);
-        
-        // 获取用户输入
-        match window.getch() {
-            Some(Input::KeyResize) => {
-                    let (rows_new, cols_new) = window.get_max_yx();
-                    rows = rows_new;
-                    cols = cols_new;
-                },
-            Some(Input::Character(c)) => {
-                match c {
-                    // 退出编辑器
-                    '\x11' => { // Ctrl+Q
-                        if editor.modified {
-                            window.mvprintw((rows - 2) as i32, 0, "文件已修改。确定要退出吗? (y/n)");
-                            window.refresh();
-                            if let Some(Input::Character('y')) = window.getch() {
-                                break;
-                            }
-                        } else {
-                            break;
-                        }
-                    },
-                    // 保存文件
-                    '\x13' => { // Ctrl+S
-                        if let Err(err) = editor.save_file() {
-                            window.mvprintw((rows - 2) as i32, 0, &format!("保存失败: {}", err));
-                            window.refresh();
-                            window.getch();
-                        }
-                    },
-                    // 标准字符输入
-                    _ => {
-                        editor.insert_char(c);
-                    }
-                }
-            },
-            Some(Input::KeyEnter) => {
-                editor.insert_newline();
-            },
-            Some(Input::KeyBackspace) | Some(Input::KeyDC) => {
-                editor.delete_char();
-            },
-            Some(Input::KeyUp) => {
-                editor.move_cursor("up");
-            },
-            Some(Input::KeyDown) => {
-                editor.move_cursor("down");
-            },
-            Some(Input::KeyLeft) => {
-                editor.move_cursor("left");
-            },
-            Some(Input::KeyRight) => {
-                editor.move_cursor("right");
-            },
-            Some(Input::KeyHome) => {
-                editor.move_cursor("home");
-            },
-            Some(Input::KeyEnd) => {
-                editor.move_cursor("end");
-            },
-            _ => {}
+
+    editor.render(&mut stdout);
+
+    for c in stdin.keys() {
+        match c.unwrap() {
+            Key::Ctrl('q') => break,
+            Key::Char('\n') => editor.insert_newline(),
+            Key::Backspace => editor.delete_char(),
+            Key::Up => editor.move_cursor("up"),
+            Key::Down => editor.move_cursor("down"),
+            Key::Left => editor.move_cursor("left"),
+            Key::Right => editor.move_cursor("right"),
+            Key::Ctrl('s') => { let _ = editor.save_file(); },
+            Key::Char(c) => editor.insert_char(c),
+            _ => {},
         }
-        
-        // 确保屏幕尺寸更新
-        let (rows_new, cols_new) = window.get_max_yx();
-        rows = rows_new;
-        cols = cols_new;
+        editor.render(&mut stdout);
     }
-    
-    // 清理屏幕
-    endwin();
 }
