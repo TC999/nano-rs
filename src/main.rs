@@ -5,6 +5,7 @@ use std::path::Path;
 use std::vec::Vec;
 use termion::raw::{IntoRawMode, RawTerminal};
 use termion::{cursor, clear, event::Key, input::TermRead};
+use std::intrinsics::mir::Goto;
 
 struct EditorConfig {
     line_numbers: bool,
@@ -184,9 +185,9 @@ impl Editor {
             if line_index >= self.buffer.len() { break; }
             let line = &self.buffer[line_index];
             if self.config.line_numbers {
-                write!(stdout, "{}{:4} {}", cursor::Goto(1, (i+1) as u16), line_index+1, line).unwrap();
+                write!(stdout, "{}{:4} {}", Goto(1, (i+1) as u16), line_index+1, line).unwrap();
             } else {
-                write!(stdout, "{}{}", cursor::Goto(1, (i+1) as u16), line).unwrap();
+                write!(stdout, "{}{}", Goto(1, (i+1) as u16), line).unwrap();
             }
         }
         // 状态栏
@@ -195,45 +196,61 @@ impl Editor {
             if self.modified { " *" } else { "" },
             self.cursor_y + 1, self.cursor_x + 1
         );
-        write!(stdout, "{}{}", cursor::Goto(1, (self.screen_rows - 1) as u16), status).unwrap();
+        write!(stdout, "{}{}", Goto(1, (self.screen_rows - 1) as u16), status).unwrap();
         // 光标位置
         let display_y = (self.cursor_y - self.screen_start_y) as u16 + 1;
         let display_x = if self.config.line_numbers { self.cursor_x as u16 + 6 } else { self.cursor_x as u16 + 1 };
-        write!(stdout, "{}", cursor::Goto(display_x, display_y)).unwrap();
+        write!(stdout, "{}", Goto(display_x, display_y)).unwrap();
         stdout.flush().unwrap();
     }
 }
 
+use crossterm::{
+    cursor,
+    event::{self, Event, KeyCode, KeyModifiers},
+    execute,
+    terminal::{self, ClearType},
+    style::Print,
+};
+
 fn main() {
-    let args: Vec<String> = env::args().collect();
-    let stdin = stdin();
-    let mut stdout = stdout().into_raw_mode().unwrap();
+    // 初始化终端（进入原始模式）
+    terminal::enable_raw_mode().unwrap();
+    let mut stdout = std::io::stdout();
 
     // 获取终端尺寸
-    let (cols, rows) = termion::terminal_size().unwrap();
+    let (cols, rows) = terminal::size().unwrap();
+
+    // 编辑器实例初始化...
     let mut editor = Editor::new();
     editor.screen_rows = rows as usize;
 
-    if args.len() > 1 {
-        let path = Path::new(&args[1]);
-        let _ = editor.load_file(path);
-    }
-
+    // 渲染初始界面
     editor.render(&mut stdout);
 
-    for c in stdin.keys() {
-        match c.unwrap() {
-            Key::Ctrl('q') => break,
-            Key::Char('\n') => editor.insert_newline(),
-            Key::Backspace => editor.delete_char(),
-            Key::Up => editor.move_cursor("up"),
-            Key::Down => editor.move_cursor("down"),
-            Key::Left => editor.move_cursor("left"),
-            Key::Right => editor.move_cursor("right"),
-            Key::Ctrl('s') => { let _ = editor.save_file(); },
-            Key::Char(c) => editor.insert_char(c),
-            _ => {},
+    loop {
+        if event::poll(std::time::Duration::from_millis(500)).unwrap() {
+            match event::read().unwrap() {
+                Event::Key(key_event) => {
+                    match key_event.code {
+                        KeyCode::Char('q') if key_event.modifiers.contains(KeyModifiers::CONTROL) => break,
+                        KeyCode::Char('s') if key_event.modifiers.contains(KeyModifiers::CONTROL) => { editor.save_file().ok(); },
+                        KeyCode::Enter => editor.insert_newline(),
+                        KeyCode::Backspace => editor.delete_char(),
+                        KeyCode::Up => editor.move_cursor("up"),
+                        KeyCode::Down => editor.move_cursor("down"),
+                        KeyCode::Left => editor.move_cursor("left"),
+                        KeyCode::Right => editor.move_cursor("right"),
+                        KeyCode::Char(c) => editor.insert_char(c),
+                        _ => {}
+                    }
+                }
+                _ => {}
+            }
+            editor.render(&mut stdout);
         }
-        editor.render(&mut stdout);
     }
+
+    // 恢复终端模式
+    terminal::disable_raw_mode().unwrap();
 }
