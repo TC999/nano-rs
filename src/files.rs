@@ -460,7 +460,7 @@ pub struct dirent {
 pub type DIR = __dirstream;
 pub type __re_long_size_t = libc::c_ulong;
 pub type reg_syntax_t = libc::c_ulong;
-#[derive(Copy, Clone, BitfieldStruct)]
+#[derive(Copy, Clone)]
 #[repr(C)]
 pub struct re_pattern_buffer {
     pub buffer: *mut re_dfa_t,
@@ -470,15 +470,7 @@ pub struct re_pattern_buffer {
     pub fastmap: *mut libc::c_char,
     pub translate: *mut libc::c_uchar,
     pub re_nsub: size_t,
-    #[bitfield(name = "can_be_null", ty = "libc::c_uint", bits = "0..=0")]
-    #[bitfield(name = "regs_allocated", ty = "libc::c_uint", bits = "1..=2")]
-    #[bitfield(name = "fastmap_accurate", ty = "libc::c_uint", bits = "3..=3")]
-    #[bitfield(name = "no_sub", ty = "libc::c_uint", bits = "4..=4")]
-    #[bitfield(name = "not_bol", ty = "libc::c_uint", bits = "5..=5")]
-    #[bitfield(name = "not_eol", ty = "libc::c_uint", bits = "6..=6")]
-    #[bitfield(name = "newline_anchor", ty = "libc::c_uint", bits = "7..=7")]
     pub can_be_null_regs_allocated_fastmap_accurate_no_sub_not_bol_not_eol_newline_anchor: [u8; 1],
-    #[bitfield(padding)]
     pub c2rust_padding: [u8; 7],
 }
 pub type regex_t = re_pattern_buffer;
@@ -3631,11 +3623,11 @@ pub unsafe extern "C" fn write_file(
                                     {
                                         0o2000 as libc::c_int
                                     } else {
-                                        (if normal as libc::c_int != 0 {
+                                        if normal as libc::c_int != 0 {
                                             0o1000 as libc::c_int
                                         } else {
                                             0o200 as libc::c_int
-                                        })
+                                        }
                                     }),
                                 permissions,
                             );
@@ -4449,7 +4441,7 @@ pub unsafe extern "C" fn write_it_out(
             full_answer = get_full_path(answer);
             full_filename = get_full_path((*openfile).filename);
             name_exists = stat(
-                (if full_answer.is_null() { answer } else { full_answer }),
+                if full_answer.is_null() { answer } else { full_answer },
                 &mut fileinfo,
             ) != -(1 as libc::c_int);
             if *((*openfile).filename).offset(0 as libc::c_int as isize) as libc::c_int
@@ -4458,12 +4450,12 @@ pub unsafe extern "C" fn write_it_out(
                 do_warning = name_exists;
             } else {
                 do_warning = strcmp(
-                    (if full_answer.is_null() { answer } else { full_answer }),
-                    (if full_filename.is_null() {
+                    if full_answer.is_null() { answer } else { full_answer },
+                    if full_filename.is_null() {
                         (*openfile).filename
                     } else {
                         full_filename
-                    }),
+                    },
                 ) != 0 as libc::c_int;
             }
             free(full_filename as *mut libc::c_void);

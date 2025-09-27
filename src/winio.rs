@@ -299,7 +299,7 @@ pub const _REG_BADPAT: C2RustUnnamed = 2;
 pub const _REG_NOMATCH: C2RustUnnamed = 1;
 pub const _REG_NOERROR: C2RustUnnamed = 0;
 pub const _REG_ENOSYS: C2RustUnnamed = -1;
-#[derive(Copy, Clone, BitfieldStruct)]
+#[derive(Copy, Clone)]
 #[repr(C)]
 pub struct re_pattern_buffer {
     pub buffer: *mut re_dfa_t,
@@ -309,15 +309,7 @@ pub struct re_pattern_buffer {
     pub fastmap: *mut libc::c_char,
     pub translate: *mut libc::c_uchar,
     pub re_nsub: size_t,
-    #[bitfield(name = "can_be_null", ty = "libc::c_uint", bits = "0..=0")]
-    #[bitfield(name = "regs_allocated", ty = "libc::c_uint", bits = "1..=2")]
-    #[bitfield(name = "fastmap_accurate", ty = "libc::c_uint", bits = "3..=3")]
-    #[bitfield(name = "no_sub", ty = "libc::c_uint", bits = "4..=4")]
-    #[bitfield(name = "not_bol", ty = "libc::c_uint", bits = "5..=5")]
-    #[bitfield(name = "not_eol", ty = "libc::c_uint", bits = "6..=6")]
-    #[bitfield(name = "newline_anchor", ty = "libc::c_uint", bits = "7..=7")]
     pub can_be_null_regs_allocated_fastmap_accurate_no_sub_not_bol_not_eol_newline_anchor: [u8; 1],
-    #[bitfield(padding)]
     pub c2rust_padding: [u8; 7],
 }
 pub type regex_t = re_pattern_buffer;
@@ -928,8 +920,7 @@ pub unsafe extern "C" fn read_keys_from(mut frame: *mut WINDOW) {
     nextcodes = key_buffer;
     waiting_codes = 1 as libc::c_int as size_t;
     if currmenu == (1 as libc::c_int) << 0 as libc::c_int {
-        refresh_needed = (refresh_needed as libc::c_int | spotlighted as libc::c_int)
-            as bool;
+        refresh_needed = (refresh_needed as libc::c_int | spotlighted as libc::c_int) != 0;
         spotlighted = 0 as libc::c_int != 0;
     }
     if input == 0x4f7 as libc::c_int {
@@ -3946,7 +3937,7 @@ pub unsafe extern "C" fn bottombars(mut menu: libc::c_int) {
             {
                 3 as libc::c_int
             } else {
-                (if flags[(MINIBAR as libc::c_int as libc::c_ulong)
+                if flags[(MINIBAR as libc::c_int as libc::c_ulong)
                     .wrapping_div(
                         (::core::mem::size_of::<libc::c_uint>() as libc::c_ulong)
                             .wrapping_mul(8 as libc::c_int as libc::c_ulong),
@@ -3961,7 +3952,7 @@ pub unsafe extern "C" fn bottombars(mut menu: libc::c_int) {
                     4 as libc::c_int
                 } else {
                     5 as libc::c_int
-                })
+                }
             })
     {
         return;
@@ -4202,11 +4193,11 @@ pub unsafe extern "C" fn draw_row(
                         &mut *((*line).data).offset(index as isize),
                         1 as libc::c_int as size_t,
                         &mut match_0,
-                        (if index == 0 as libc::c_int as size_t {
+                        if index == 0 as libc::c_int as size_t {
                             0 as libc::c_int
                         } else {
                             1 as libc::c_int
-                        }),
+                        },
                     ) != 0 as libc::c_int
                     {
                         break;
@@ -4356,11 +4347,11 @@ pub unsafe extern "C" fn draw_row(
                                 ((*line).data).offset(index as isize),
                                 1 as libc::c_int as size_t,
                                 &mut startmatch,
-                                (if index == 0 as libc::c_int as size_t {
+                                if index == 0 as libc::c_int as size_t {
                                     0 as libc::c_int
                                 } else {
                                     1 as libc::c_int
-                                }),
+                                },
                             ) == 0 as libc::c_int
                         {
                             startmatch
@@ -4383,11 +4374,11 @@ pub unsafe extern "C" fn draw_row(
                                 ((*line).data).offset(startmatch.rm_eo as isize),
                                 1 as libc::c_int as size_t,
                                 &mut endmatch,
-                                (if startmatch.rm_eo == 0 as libc::c_int {
+                                if startmatch.rm_eo == 0 as libc::c_int {
                                     0 as libc::c_int
                                 } else {
                                     1 as libc::c_int
-                                }),
+                                },
                             ) == 0 as libc::c_int
                             {
                                 endmatch.rm_so += startmatch.rm_eo;
@@ -5338,8 +5329,7 @@ pub unsafe extern "C" fn edit_refresh() {
                             .wrapping_mul(8 as libc::c_int as libc::c_ulong),
                     ) != 0 as libc::c_int as libc::c_uint
             && !((*(*openfile).edittop).prev).is_null()
-            && ((*(*(*openfile).edittop).prev).multidata).is_null()) as libc::c_int)
-        as bool;
+            && ((*(*(*openfile).edittop).prev).multidata).is_null()) as libc::c_int) != 0;
     if recook {
         precalc_multicolorinfo();
         perturbed = 0 as libc::c_int != 0;

@@ -519,7 +519,7 @@ pub unsafe extern "C" fn browser_refresh() {
         if wmove(
             midwin,
             row,
-            (if dots as libc::c_int != 0 { col + 3 as libc::c_int } else { col }),
+            if dots as libc::c_int != 0 { col + 3 as libc::c_int } else { col },
         ) == -(1 as libc::c_int)
         {
             -(1 as libc::c_int);

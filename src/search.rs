@@ -223,7 +223,7 @@ pub struct stat {
 }
 pub type __re_long_size_t = libc::c_ulong;
 pub type reg_syntax_t = libc::c_ulong;
-#[derive(Copy, Clone, BitfieldStruct)]
+#[derive(Copy, Clone)]
 #[repr(C)]
 pub struct re_pattern_buffer {
     pub buffer: *mut re_dfa_t,
@@ -233,15 +233,7 @@ pub struct re_pattern_buffer {
     pub fastmap: *mut libc::c_char,
     pub translate: *mut libc::c_uchar,
     pub re_nsub: size_t,
-    #[bitfield(name = "can_be_null", ty = "libc::c_uint", bits = "0..=0")]
-    #[bitfield(name = "regs_allocated", ty = "libc::c_uint", bits = "1..=2")]
-    #[bitfield(name = "fastmap_accurate", ty = "libc::c_uint", bits = "3..=3")]
-    #[bitfield(name = "no_sub", ty = "libc::c_uint", bits = "4..=4")]
-    #[bitfield(name = "not_bol", ty = "libc::c_uint", bits = "5..=5")]
-    #[bitfield(name = "not_eol", ty = "libc::c_uint", bits = "6..=6")]
-    #[bitfield(name = "newline_anchor", ty = "libc::c_uint", bits = "7..=7")]
     pub can_be_null_regs_allocated_fastmap_accurate_no_sub_not_bol_not_eol_newline_anchor: [u8; 1],
-    #[bitfield(padding)]
     pub c2rust_padding: [u8; 7],
 }
 pub type regex_t = re_pattern_buffer;
@@ -514,7 +506,7 @@ pub unsafe extern "C" fn tidy_up_after_search() {
     if !((*openfile).mark).is_null() {
         refresh_needed = 1 as libc::c_int != 0;
     }
-    recook = (recook as libc::c_int | perturbed as libc::c_int) as bool;
+    recook = (recook as libc::c_int | perturbed as libc::c_int) != 0;
 }
 #[no_mangle]
 pub unsafe extern "C" fn search_init(mut replacing: bool, mut retain_answer: bool) {
@@ -1603,7 +1595,7 @@ pub unsafe extern "C" fn goto_line_posx(mut linenumber: ssize_t, mut pos_x: size
                     ) != 0 as libc::c_int as libc::c_uint
             && linenumber > (*(*openfile).current).lineno
     {
-        recook = (recook as libc::c_int | perturbed as libc::c_int) as bool;
+        recook = (recook as libc::c_int | perturbed as libc::c_int) != 0;
     }
     if linenumber < (*(*openfile).filebot).lineno {
         (*openfile).current = line_from_number(linenumber);
@@ -1724,7 +1716,7 @@ pub unsafe extern "C" fn goto_line_and_column(
                     ) != 0 as libc::c_int as libc::c_uint
             && line > (*(*openfile).current).lineno
     {
-        recook = (recook as libc::c_int | perturbed as libc::c_int) as bool;
+        recook = (recook as libc::c_int | perturbed as libc::c_int) != 0;
     }
     (*openfile).current = (*openfile).filetop;
     while line > 1 as libc::c_int as ssize_t
@@ -2040,7 +2032,7 @@ pub unsafe extern "C" fn go_to_and_confirm(mut line: *mut linestruct) {
                         ) != 0 as libc::c_int as libc::c_uint
                 && (*line).lineno > (*was_current).lineno
         {
-            recook = (recook as libc::c_int | perturbed as libc::c_int) as bool;
+            recook = (recook as libc::c_int | perturbed as libc::c_int) != 0;
         }
         edit_redraw(was_current, CENTERING);
         if !(flags[(LINE_NUMBERS as libc::c_int as libc::c_ulong)
