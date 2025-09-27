@@ -209,7 +209,7 @@ pub struct stat {
 }
 pub type __re_long_size_t = libc::c_ulong;
 pub type reg_syntax_t = libc::c_ulong;
-#[derive(Copy, Clone, BitfieldStruct)]
+#[derive(Copy, Clone)]
 #[repr(C)]
 pub struct re_pattern_buffer {
     pub buffer: *mut re_dfa_t,
@@ -219,15 +219,7 @@ pub struct re_pattern_buffer {
     pub fastmap: *mut libc::c_char,
     pub translate: *mut libc::c_uchar,
     pub re_nsub: size_t,
-    #[bitfield(name = "can_be_null", ty = "libc::c_uint", bits = "0..=0")]
-    #[bitfield(name = "regs_allocated", ty = "libc::c_uint", bits = "1..=2")]
-    #[bitfield(name = "fastmap_accurate", ty = "libc::c_uint", bits = "3..=3")]
-    #[bitfield(name = "no_sub", ty = "libc::c_uint", bits = "4..=4")]
-    #[bitfield(name = "not_bol", ty = "libc::c_uint", bits = "5..=5")]
-    #[bitfield(name = "not_eol", ty = "libc::c_uint", bits = "6..=6")]
-    #[bitfield(name = "newline_anchor", ty = "libc::c_uint", bits = "7..=7")]
     pub can_be_null_regs_allocated_fastmap_accurate_no_sub_not_bol_not_eol_newline_anchor: [u8; 1],
-    #[bitfield(padding)]
     pub c2rust_padding: [u8; 7],
 }
 pub type regex_t = re_pattern_buffer;

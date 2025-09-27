@@ -125,7 +125,7 @@ pub struct stat {
 }
 pub type __re_long_size_t = libc::c_ulong;
 pub type reg_syntax_t = libc::c_ulong;
-#[derive(Copy, Clone, BitfieldStruct)]
+#[derive(Copy, Clone)]
 #[repr(C)]
 pub struct re_pattern_buffer {
     pub buffer: *mut re_dfa_t,
@@ -135,15 +135,7 @@ pub struct re_pattern_buffer {
     pub fastmap: *mut libc::c_char,
     pub translate: *mut libc::c_uchar,
     pub re_nsub: size_t,
-    #[bitfield(name = "can_be_null", ty = "libc::c_uint", bits = "0..=0")]
-    #[bitfield(name = "regs_allocated", ty = "libc::c_uint", bits = "1..=2")]
-    #[bitfield(name = "fastmap_accurate", ty = "libc::c_uint", bits = "3..=3")]
-    #[bitfield(name = "no_sub", ty = "libc::c_uint", bits = "4..=4")]
-    #[bitfield(name = "not_bol", ty = "libc::c_uint", bits = "5..=5")]
-    #[bitfield(name = "not_eol", ty = "libc::c_uint", bits = "6..=6")]
-    #[bitfield(name = "newline_anchor", ty = "libc::c_uint", bits = "7..=7")]
     pub can_be_null_regs_allocated_fastmap_accurate_no_sub_not_bol_not_eol_newline_anchor: [u8; 1],
-    #[bitfield(padding)]
     pub c2rust_padding: [u8; 7],
 }
 pub type regex_t = re_pattern_buffer;
@@ -442,7 +434,7 @@ pub unsafe extern "C" fn expunge(mut action: undo_type) {
         }
         (*(*openfile).current)
             .has_anchor = ((*(*openfile).current).has_anchor as libc::c_int
-            | (*joining).has_anchor as libc::c_int) as bool;
+            | (*joining).has_anchor as libc::c_int) != 0;
         (*(*openfile).current)
             .data = nrealloc(
             (*(*openfile).current).data as *mut libc::c_void,
@@ -655,8 +647,7 @@ pub unsafe extern "C" fn extract_segment(
     if top != bot {
         let mut line: *mut linestruct = (*top).next;
         while line != (*bot).next {
-            had_anchor = (had_anchor as libc::c_int | (*line).has_anchor as libc::c_int)
-                as bool;
+            had_anchor = (had_anchor as libc::c_int | (*line).has_anchor as libc::c_int) != 0;
             line = (*line).next;
         }
     }
@@ -734,7 +725,7 @@ pub unsafe extern "C" fn extract_segment(
         (*cutbottom)
             .has_anchor = (*taken).has_anchor as libc::c_int != 0 && !inherited_anchor;
         inherited_anchor = (inherited_anchor as libc::c_int
-            | (*taken).has_anchor as libc::c_int) as bool;
+            | (*taken).has_anchor as libc::c_int) != 0;
         (*cutbottom).next = (*taken).next;
         delete_node(taken);
         if !((*cutbottom).next).is_null() {
@@ -902,7 +893,7 @@ pub unsafe extern "C" fn do_snip(
     let mut line: *mut linestruct = (*openfile).current;
     keep_cutbuffer = (keep_cutbuffer as libc::c_int
         & ((*openfile).last_action as libc::c_uint
-            != COPY as libc::c_int as libc::c_uint) as libc::c_int) as bool;
+            != COPY as libc::c_int as libc::c_uint) as libc::c_int) != 0;
     if (marked as libc::c_int != 0 || until_eof as libc::c_int != 0 || !keep_cutbuffer)
         && !append
     {
