@@ -725,11 +725,11 @@ pub unsafe extern "C" fn precalc_multicolorinfo() {
                     ((*line).data).offset(index as isize),
                     1 as libc::c_int as size_t,
                     &mut startmatch,
-                    (if index == 0 as libc::c_int {
+                    if index == 0 as libc::c_int {
                         0 as libc::c_int
                     } else {
                         1 as libc::c_int
-                    }),
+                    },
                 ) == 0 as libc::c_int
                 {
                     index += startmatch.rm_eo;
@@ -738,11 +738,11 @@ pub unsafe extern "C" fn precalc_multicolorinfo() {
                         ((*line).data).offset(index as isize),
                         1 as libc::c_int as size_t,
                         &mut endmatch,
-                        (if index == 0 as libc::c_int {
+                        if index == 0 as libc::c_int {
                             0 as libc::c_int
                         } else {
                             1 as libc::c_int
-                        }),
+                        },
                     ) == 0 as libc::c_int
                     {
                         *((*line).multidata)

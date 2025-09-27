@@ -3937,7 +3937,7 @@ pub unsafe extern "C" fn bottombars(mut menu: libc::c_int) {
             {
                 3 as libc::c_int
             } else {
-                (if flags[(MINIBAR as libc::c_int as libc::c_ulong)
+                if flags[(MINIBAR as libc::c_int as libc::c_ulong)
                     .wrapping_div(
                         (::core::mem::size_of::<libc::c_uint>() as libc::c_ulong)
                             .wrapping_mul(8 as libc::c_int as libc::c_ulong),
@@ -3952,7 +3952,7 @@ pub unsafe extern "C" fn bottombars(mut menu: libc::c_int) {
                     4 as libc::c_int
                 } else {
                     5 as libc::c_int
-                })
+                }
             })
     {
         return;
@@ -4193,11 +4193,11 @@ pub unsafe extern "C" fn draw_row(
                         &mut *((*line).data).offset(index as isize),
                         1 as libc::c_int as size_t,
                         &mut match_0,
-                        (if index == 0 as libc::c_int as size_t {
+                        if index == 0 as libc::c_int as size_t {
                             0 as libc::c_int
                         } else {
                             1 as libc::c_int
-                        }),
+                        },
                     ) != 0 as libc::c_int
                     {
                         break;
@@ -4347,11 +4347,11 @@ pub unsafe extern "C" fn draw_row(
                                 ((*line).data).offset(index as isize),
                                 1 as libc::c_int as size_t,
                                 &mut startmatch,
-                                (if index == 0 as libc::c_int as size_t {
+                                if index == 0 as libc::c_int as size_t {
                                     0 as libc::c_int
                                 } else {
                                     1 as libc::c_int
-                                }),
+                                },
                             ) == 0 as libc::c_int
                         {
                             startmatch
@@ -4374,11 +4374,11 @@ pub unsafe extern "C" fn draw_row(
                                 ((*line).data).offset(startmatch.rm_eo as isize),
                                 1 as libc::c_int as size_t,
                                 &mut endmatch,
-                                (if startmatch.rm_eo == 0 as libc::c_int {
+                                if startmatch.rm_eo == 0 as libc::c_int {
                                     0 as libc::c_int
                                 } else {
                                     1 as libc::c_int
-                                }),
+                                },
                             ) == 0 as libc::c_int
                             {
                                 endmatch.rm_so += startmatch.rm_eo;

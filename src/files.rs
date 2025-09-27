@@ -3623,11 +3623,11 @@ pub unsafe extern "C" fn write_file(
                                     {
                                         0o2000 as libc::c_int
                                     } else {
-                                        (if normal as libc::c_int != 0 {
+                                        if normal as libc::c_int != 0 {
                                             0o1000 as libc::c_int
                                         } else {
                                             0o200 as libc::c_int
-                                        })
+                                        }
                                     }),
                                 permissions,
                             );
@@ -4441,7 +4441,7 @@ pub unsafe extern "C" fn write_it_out(
             full_answer = get_full_path(answer);
             full_filename = get_full_path((*openfile).filename);
             name_exists = stat(
-                (if full_answer.is_null() { answer } else { full_answer }),
+                if full_answer.is_null() { answer } else { full_answer },
                 &mut fileinfo,
             ) != -(1 as libc::c_int);
             if *((*openfile).filename).offset(0 as libc::c_int as isize) as libc::c_int
@@ -4450,12 +4450,12 @@ pub unsafe extern "C" fn write_it_out(
                 do_warning = name_exists;
             } else {
                 do_warning = strcmp(
-                    (if full_answer.is_null() { answer } else { full_answer }),
-                    (if full_filename.is_null() {
+                    if full_answer.is_null() { answer } else { full_answer },
+                    if full_filename.is_null() {
                         (*openfile).filename
                     } else {
                         full_filename
-                    }),
+                    },
                 ) != 0 as libc::c_int;
             }
             free(full_filename as *mut libc::c_void);

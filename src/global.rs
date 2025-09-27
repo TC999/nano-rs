@@ -1001,7 +1001,7 @@ pub unsafe extern "C" fn interpret(keycode: libc::c_int) -> functionptrtype {
         if keycode == 'n' as i32 {
             return Some(do_findnext as unsafe extern "C" fn() -> ());
         }
-        match ({
+        match {
             let mut __res: libc::c_int = 0;
             if ::core::mem::size_of::<libc::c_int>() as libc::c_ulong
                 > 1 as libc::c_int as libc::c_ulong
@@ -1020,7 +1020,7 @@ pub unsafe extern "C" fn interpret(keycode: libc::c_int) -> functionptrtype {
                 __res = *(*__ctype_tolower_loc()).offset(keycode as isize);
             }
             __res
-        }) {
+        } {
             98 | 45 => return Some(do_page_up as unsafe extern "C" fn() -> ()),
             32 => return Some(do_page_down as unsafe extern "C" fn() -> ()),
             119 | 47 => return Some(do_search_forward as unsafe extern "C" fn() -> ()),

@@ -728,7 +728,7 @@ pub unsafe extern "C" fn wrap_help_text_into_buffer() {
     let mut wrapping_point: size_t = ((if COLS < 40 as libc::c_int {
         40 as libc::c_int
     } else {
-        (if COLS > 74 as libc::c_int { 74 as libc::c_int } else { COLS })
+        if COLS > 74 as libc::c_int { 74 as libc::c_int } else { COLS }
     }) - sidebar) as size_t;
     let mut ptr: *const libc::c_char = start_of_body;
     let mut sum: size_t = 0 as libc::c_int as size_t;
